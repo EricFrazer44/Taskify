@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1068183427813",
+    "project_id": "flutterexample322",
+    "storage_bucket": "flutterexample322.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1068183427813:android:0ff2554cd579296136120c",
+        "android_client_info": {
+          "package_name": "com.example.taskify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWfSfpW8WdnRrSkZh8_6C2unIkPwex7cg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

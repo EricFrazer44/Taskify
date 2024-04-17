@@ -39,7 +39,34 @@ class _TaskCalendarState extends State<TaskCalendar> {
   final CalendarFormat _calendarFormat = CalendarFormat.month;
   final _formKey = GlobalKey<FormBuilderState>();
   DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  DateTime _selectedDay = DateTime.now();
+  List<Map<String, dynamic>> _tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTasks();
+  }
+
+  void _fetchTasks() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    String dateStr = DateFormat('yyyy-MM-dd').format(_selectedDay);
+
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    DocumentSnapshot doc =
+        await users.doc(userId).collection('tasks').doc(dateStr).get();
+
+    if (doc.exists) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      _tasks = data.entries.map((e) {
+        return {'time': e.key, 'description': e.value['description']};
+      }).toList();
+    } else {
+      _tasks = [];
+    }
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,20 +74,81 @@ class _TaskCalendarState extends State<TaskCalendar> {
       appBar: AppBar(
         title: const Text('Taskify'),
       ),
-      body: TableCalendar(
-        firstDay: DateTime.utc(2010, 10, 16),
-        lastDay: DateTime.utc(2030, 3, 14),
-        focusedDay: _focusedDay,
-        calendarFormat: _calendarFormat,
-        selectedDayPredicate: (day) {
-          return isSameDay(_selectedDay, day);
-        },
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-        },
+      body: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue, width: 2),
+            ),
+            child: TableCalendar(
+              // Other properties...
+              firstDay: DateTime.utc(2010, 10, 16),
+              lastDay: DateTime.utc(2030, 3, 14),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                  _fetchTasks();
+                });
+              },
+              calendarStyle: const CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              headerStyle: HeaderStyle(
+                formatButtonDecoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                formatButtonTextStyle: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _tasks.isEmpty
+                ? const Center(child: Text('No tasks for this day'))
+                : Container(
+                    margin: const EdgeInsets.all(8.0),
+                    child: Card(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Tasks: ${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
+                              style: const TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: _tasks.map((task) {
+                                  return ListTile(
+                                    title: Text(task['description']),
+                                    subtitle: Text(task['time']),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -144,7 +232,8 @@ class _TaskCalendarState extends State<TaskCalendar> {
             },
           );
         },
-        child: Icon(Icons.add),
+        child: const Text('+'),
+        foregroundColor: Colors.white,
         backgroundColor: Colors.blue,
       ),
     );

@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:taskify/authentication.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Task Calendar',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: TaskCalendar(),
+      home: const AuthGate(),
     );
   }
 }
@@ -26,7 +32,7 @@ class TaskCalendar extends StatefulWidget {
 }
 
 class _TaskCalendarState extends State<TaskCalendar> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
@@ -34,7 +40,7 @@ class _TaskCalendarState extends State<TaskCalendar> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Task Calendar'),
+        title: const Text('Task Calendar'),
       ),
       body: TableCalendar(
         firstDay: DateTime.utc(2010, 10, 16),

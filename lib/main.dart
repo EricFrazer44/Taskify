@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +9,7 @@ import 'package:taskify/authentication.dart';
 import 'firebase_options.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,20 +71,46 @@ class _TaskCalendarState extends State<TaskCalendar> {
     setState(() {});
   }
 
+  Future<String> fetchData() async {
+    final response = await http.get(
+      Uri.parse('https://api.api-ninjas.com/v1/dadjokes?limit=1'),
+      headers: {
+        'X-Api-Key': 'JzgzIQe7aLmzLoJlf7dZWQ==HFXKNG3hzm7uY2pI',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      return data[0]['joke'];
+    } else {
+      throw Exception('Failed to fetch data: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Taskify'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.lightbulb_outline),
+            onPressed: () async {
+              final joke = await fetchData();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(joke as String)),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
+              border: Border.all(color: Colors.purple, width: 2),
             ),
             child: TableCalendar(
-              // Other properties...
               firstDay: DateTime.utc(2010, 10, 16),
               lastDay: DateTime.utc(2030, 3, 14),
               focusedDay: _focusedDay,
@@ -98,17 +127,17 @@ class _TaskCalendarState extends State<TaskCalendar> {
               },
               calendarStyle: const CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.purple,
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.purple,
                   shape: BoxShape.circle,
                 ),
               ),
               headerStyle: HeaderStyle(
                 formatButtonDecoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.purple,
                   borderRadius: BorderRadius.circular(20.0),
                 ),
                 formatButtonTextStyle: const TextStyle(color: Colors.white),
@@ -126,7 +155,7 @@ class _TaskCalendarState extends State<TaskCalendar> {
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
-                              'Tasks: ${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
+                              ' ${DateFormat('yyyy-MM-dd').format(_selectedDay)}',
                               style: const TextStyle(
                                   fontSize: 24, fontWeight: FontWeight.bold),
                             ),
@@ -158,83 +187,111 @@ class _TaskCalendarState extends State<TaskCalendar> {
           showDialog(
             context: context,
             builder: (context) {
-              return AlertDialog(
-                title: const Text('Add Task'),
-                content: Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        TextFormField(
-                          decoration:
-                              const InputDecoration(labelText: 'Description'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a description';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) {
-                            description = value;
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          child: const Text('Select Date/Time'),
-                          onPressed: () async {
-                            final selectedDate = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime(1900),
-                              lastDate: DateTime(2100),
-                            );
-                            if (selectedDate != null) {
-                              final selectedTime = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.now(),
-                              );
-                              if (selectedTime != null) {
-                                date = DateTime(
-                                  selectedDate.year,
-                                  selectedDate.month,
-                                  selectedDate.day,
-                                  selectedTime.hour,
-                                  selectedTime.minute,
-                                );
-                              }
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  primaryColor: Colors.purple,
+                  colorScheme: const ColorScheme.light(
+                    primary: Colors.purple,
+                    onPrimary: Colors.white,
+                    surface: Colors.purple,
+                    onSurface: Colors.white,
+                  ),
+                  buttonTheme: const ButtonThemeData(
+                    textTheme: ButtonTextTheme.primary,
                   ),
                 ),
-                actions: <Widget>[
-                  TextButton(
-                    child: Text('Cancel'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                child: AlertDialog(
+                  title: const Text('Add Task'),
+                  content: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Description',
+                              labelStyle: TextStyle(color: Colors.purple),
+                              enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.purple),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a description';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              description = value;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.purple, // text color
+                            ),
+                            child: const Text('Select Date/Time'),
+                            onPressed: () async {
+                              final selectedDate = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime(2100),
+                              );
+                              if (selectedDate != null) {
+                                final selectedTime = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay.now(),
+                                );
+                                if (selectedTime != null) {
+                                  date = DateTime(
+                                    selectedDate.year,
+                                    selectedDate.month,
+                                    selectedDate.day,
+                                    selectedTime.hour,
+                                    selectedTime.minute,
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  TextButton(
-                    child: Text('Add'),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        addTask(description!, date!);
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('Cancel'),
+                      onPressed: () {
                         Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                    TextButton(
+                      child: const Text('Add'),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          addTask(description!, date!);
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Task Added'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           );
         },
-        child: const Text('+'),
-        foregroundColor: Colors.white,
-        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add),
+        backgroundColor: Colors.purple,
       ),
     );
   }
@@ -257,3 +314,5 @@ class _TaskCalendarState extends State<TaskCalendar> {
         .catchError((error) => print('Failed to add task: $error'));
   }
 }
+
+//addTask(description!, date!);
